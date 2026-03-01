@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Country Chicken Farm Manager</title>
+  <meta name="description" content="Simple and lightweight daily farm work manager — todos, income, and expense tracker for your country chicken farm.">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🐔</text></svg>">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- Toast notification -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- Backup Reminder Banner -->
+  <div id="backup-banner" class="backup-banner hidden">
+    <span>⚠️ You haven't backed up in over 7 days!</span>
+    <button onclick="App.switchTab('backup')" class="banner-btn">Backup Now</button>
+    <button onclick="App.dismissBanner()" class="banner-close">✕</button>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1>🐔 Farm Manager</h1>
+        <p class="header-date" id="header-date"></p>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- ==================== DASHBOARD TAB ==================== -->
+    <section id="tab-dashboard" class="tab-panel active">
+      <div class="summary-grid">
+        <div class="summary-card card-tasks">
+          <div class="card-icon">📋</div>
+          <div class="card-info">
+            <span class="card-value" id="dash-pending">0</span>
+            <span class="card-label">Pending Tasks</span>
+          </div>
+        </div>
+        <div class="summary-card card-income">
+          <div class="card-icon">💰</div>
+          <div class="card-info">
+            <span class="card-value" id="dash-income">₹0</span>
+            <span class="card-label">This Month Income</span>
+          </div>
+        </div>
+        <div class="summary-card card-expense">
+          <div class="card-icon">💸</div>
+          <div class="card-info">
+            <span class="card-value" id="dash-expense">₹0</span>
+            <span class="card-label">This Month Expense</span>
+          </div>
+        </div>
+        <div class="summary-card card-profit">
+          <div class="card-icon">📈</div>
+          <div class="card-info">
+            <span class="card-value" id="dash-profit">₹0</span>
+            <span class="card-label">This Month Profit</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Profit Bar -->
+      <div class="profit-bar-container">
+        <h3>Income vs Expense</h3>
+        <div class="profit-bars">
+          <div class="bar-row">
+            <span class="bar-label">Income</span>
+            <div class="bar-track">
+              <div class="bar-fill bar-income" id="bar-income" style="width: 0%"></div>
+            </div>
+            <span class="bar-amount" id="bar-income-amt">₹0</span>
+          </div>
+          <div class="bar-row">
+            <span class="bar-label">Expense</span>
+            <div class="bar-track">
+              <div class="bar-fill bar-expense" id="bar-expense" style="width: 0%"></div>
+            </div>
+            <span class="bar-amount" id="bar-expense-amt">₹0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <h3>Quick Actions</h3>
+        <div class="action-buttons">
+          <button class="action-btn action-todo" onclick="App.switchTab('todos')">
+            <span class="action-icon">✏️</span>
+            <span>Add Todo</span>
+          </button>
+          <button class="action-btn action-income" onclick="App.showModal('income')">
+            <span class="action-icon">💰</span>
+            <span>Add Income</span>
+          </button>
+          <button class="action-btn action-expense" onclick="App.showModal('expense')">
+            <span class="action-icon">💸</span>
+            <span>Add Expense</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Recent Activity -->
+      <div class="recent-activity">
+        <h3>Today's Activity</h3>
+        <div id="recent-list" class="recent-list">
+          <div class="empty-state">
+            <span class="empty-icon">🌾</span>
+            <p>No activity today. Start by adding a task!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== TODOS TAB ==================== -->
+    <section id="tab-todos" class="tab-panel">
+      <div class="section-header">
+        <h2>Daily Tasks</h2>
+        <div class="date-nav">
+          <button class="date-arrow" onclick="App.changeDate(-1)">‹</button>
+          <input type="date" id="todo-date" class="date-input" onchange="App.onDateChange(this.value)">
+          <button class="date-arrow" onclick="App.changeDate(1)">›</button>
+        </div>
+      </div>
+
+      <form class="add-todo-form" onsubmit="App.handleAddTodo(event)">
+        <input type="text" id="todo-input" class="todo-input" placeholder="Add a new task..." autocomplete="off" required>
+        <button type="submit" class="btn-add-todo">Add</button>
+      </form>
+
+      <div id="todo-list" class="todo-list"></div>
+    </section>
+
+    <!-- ==================== INCOME TAB ==================== -->
+    <section id="tab-income" class="tab-panel">
+      <div class="section-header">
+        <h2>Income</h2>
+        <button class="btn-primary" onclick="App.showModal('income')">+ Add Income</button>
+      </div>
+
+      <div class="month-nav">
+        <button class="date-arrow" onclick="App.changeMonth('income', -1)">‹</button>
+        <span id="income-month-label" class="month-label"></span>
+        <button class="date-arrow" onclick="App.changeMonth('income', 1)">›</button>
+      </div>
+
+      <div class="finance-total income-total">
+        <span>Total Income:</span>
+        <span id="income-total" class="total-amount">₹0</span>
+      </div>
+
+      <div id="income-list" class="finance-list"></div>
+    </section>
+
+    <!-- ==================== EXPENSES TAB ==================== -->
+    <section id="tab-expenses" class="tab-panel">
+      <div class="section-header">
+        <h2>Expenses</h2>
+        <button class="btn-primary" onclick="App.showModal('expense')">+ Add Expense</button>
+      </div>
+
+      <div class="month-nav">
+        <button class="date-arrow" onclick="App.changeMonth('expense', -1)">‹</button>
+        <span id="expense-month-label" class="month-label"></span>
+        <button class="date-arrow" onclick="App.changeMonth('expense', 1)">›</button>
+      </div>
+
+      <div class="finance-total expense-total">
+        <span>Total Expenses:</span>
+        <span id="expense-total" class="total-amount">₹0</span>
+      </div>
+
+      <div id="expense-list" class="finance-list"></div>
+    </section>
+
+    <!-- ==================== BACKUP TAB ==================== -->
+    <section id="tab-backup" class="tab-panel">
+      <div class="backup-section">
+        <div class="backup-icon">💾</div>
+        <h2>Data Backup & Restore</h2>
+        <p class="backup-desc">Your data is saved in this browser. Export regularly to keep it safe!</p>
+
+        <div class="backup-status" id="backup-status">
+          <span class="status-dot"></span>
+          <span id="last-backup-text">Never backed up</span>
+        </div>
+
+        <div class="backup-actions">
+          <button class="btn-export" onclick="App.handleExport()">
+            <span>📥</span> Export Data
+          </button>
+          <button class="btn-import" onclick="document.getElementById('import-file').click()">
+            <span>📤</span> Import Data
+          </button>
+          <input type="file" id="import-file" accept=".json" hidden onchange="App.handleImport(event)">
+        </div>
+
+        <div class="backup-stats" id="backup-stats"></div>
+
+        <div class="backup-warning">
+          <p>⚠️ <strong>Important:</strong> If you clear your browser data, your records will be lost. Always keep a backup file!</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-btn active" data-tab="dashboard" onclick="App.switchTab('dashboard')">
+      <span class="nav-icon">📊</span>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-btn" data-tab="todos" onclick="App.switchTab('todos')">
+      <span class="nav-icon">📋</span>
+      <span class="nav-label">Todos</span>
+    </button>
+    <button class="nav-btn" data-tab="income" onclick="App.switchTab('income')">
+      <span class="nav-icon">💰</span>
+      <span class="nav-label">Income</span>
+    </button>
+    <button class="nav-btn" data-tab="expenses" onclick="App.switchTab('expenses')">
+      <span class="nav-icon">💸</span>
+      <span class="nav-label">Expense</span>
+    </button>
+    <button class="nav-btn" data-tab="backup" onclick="App.switchTab('backup')">
+      <span class="nav-icon">💾</span>
+      <span class="nav-label">Backup</span>
+    </button>
+  </nav>
+
+  <!-- Modal Overlay -->
+  <div id="modal-overlay" class="modal-overlay hidden" onclick="App.hideModal()"></div>
+
+  <!-- Finance Entry Modal -->
+  <div id="finance-modal" class="modal hidden">
+    <div class="modal-header">
+      <h2 id="modal-title">Add Income</h2>
+      <button class="modal-close" onclick="App.hideModal()">✕</button>
+    </div>
+    <form id="finance-form" onsubmit="App.handleSaveFinance(event)">
+      <input type="hidden" id="finance-type" value="income">
+
+      <div class="form-group">
+        <label for="finance-date">Date</label>
+        <input type="date" id="finance-date" class="form-input" required>
+      </div>
+
+      <div class="form-group">
+        <label for="finance-category">Category</label>
+        <select id="finance-category" class="form-input" required>
+          <!-- Options filled dynamically -->
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="finance-amount">Amount (₹)</label>
+        <input type="number" id="finance-amount" class="form-input" placeholder="0" min="1" step="1" required>
+      </div>
+
+      <div class="form-group">
+        <label for="finance-notes">Notes <span class="optional">(optional)</span></label>
+        <input type="text" id="finance-notes" class="form-input" placeholder="e.g. Sold 30 eggs at market">
+      </div>
+
+      <div class="modal-actions">
+        <button type="button" class="btn-cancel" onclick="App.hideModal()">Cancel</button>
+        <button type="submit" class="btn-save" id="modal-save-btn">Save</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Confirm Delete Modal -->
+  <div id="confirm-modal" class="modal confirm-modal hidden">
+    <div class="confirm-content">
+      <p>Are you sure you want to delete this entry?</p>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="App.hideConfirm()">Cancel</button>
+        <button class="btn-delete" id="confirm-delete-btn">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
